@@ -39,9 +39,9 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     environment:
-      PMA_HOST: mysql
-      PMA_USER: root
-      PMA_PASSWORD: ""
+      PMA_HOST: ${DB_HOST}
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       PMA_ARBITRARY: "1"
     ports:

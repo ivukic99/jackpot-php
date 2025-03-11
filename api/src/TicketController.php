@@ -1,5 +1,6 @@
 <?php
 require_once 'Ticket.php';
+require_once 'ResponseHelper.php';
 
 header('Content-Type: application/json');
 
@@ -15,13 +16,10 @@ class TicketsController
             $ticket->create();
         } elseif ($uri === '/api/ticket' && $method === 'DELETE') {
             // elseif (preg_match('/^\/api\/ticket\/:([0-9]+)$/', $uri, $matches) && $method === 'DELETE')
-
             $ticket = new Ticket();
             $ticket->delete();
         } else {
-            http_response_code(404);
-            echo json_encode(['message' => $uri]);
-            exit;
+            ResponseHelper::jsonResponse(['message' => $uri], 404);
         }
     }
 }
