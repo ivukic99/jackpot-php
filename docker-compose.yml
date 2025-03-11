@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./api
+    container_name: api
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./api:/var/www/html
+      - ./.env:/var/www/html/.env
+      - /var/www/html/vendor
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # WebSocket
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+#      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_NAME}
+#      MYSQL_USER: root
+#      MYSQL_PASSWORD: ''
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: ""
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      PMA_ARBITRARY: "1"
+    ports:
+      - "8000:80"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
