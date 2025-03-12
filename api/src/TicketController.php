@@ -1,7 +1,7 @@
 <?php
 require_once 'Ticket.php';
 require_once 'ResponseHelper.php';
-require_once 'ApiKeyMiddleware.php';
+require_once 'Middleware.php';
 
 header('Content-Type: application/json');
 
@@ -25,5 +25,6 @@ class TicketsController
     }
 }
 
-ApiKeyMiddleware::authenticate();
+Middleware::apiKeyAuthenticate();
+Middleware::ensureJsonRequest();
 TicketsController::handleRequest();
