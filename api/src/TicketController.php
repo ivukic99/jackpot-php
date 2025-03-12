@@ -1,12 +1,13 @@
 <?php
 require_once 'Ticket.php';
 require_once 'ResponseHelper.php';
+require_once 'ApiKeyMiddleware.php';
 
 header('Content-Type: application/json');
 
 class TicketsController
 {
-    public function handleRequest()
+    public static function handleRequest()
     {
         $uri = $_SERVER['REQUEST_URI'];
         $method = $_SERVER['REQUEST_METHOD'];
@@ -24,6 +25,5 @@ class TicketsController
     }
 }
 
-$controller = new TicketsController();
-$controller->handleRequest();
-?>
+ApiKeyMiddleware::authenticate();
+TicketsController::handleRequest();

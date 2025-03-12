@@ -1,3 +1,2 @@
 <?php
-    require_once '../src/TicketController.php';
-?>
+require_once '../src/TicketController.php';
