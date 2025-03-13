@@ -13,10 +13,38 @@ services:
       - /var/www/html/vendor
     depends_on:
       - mysql
+      - redis
     networks:
       - app-network
 
-  # WebSocket
+  websocket:
+    build: ./websocket
+    container_name: websocket
+    restart: always
+    ports:
+      - "3000:3000"
+      - "4000:4000"
+    volumes:
+      - ./websocket:/app
+      - /app/node_modules
+      - ./.env:/app/.env
+    depends_on:
+      - api
+      - redis
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      app-network:
+
 
   mysql:
     image: mysql:8.0
@@ -58,3 +86,4 @@ networks:
 
 volumes:
   mysql_data:
+  redis-data:

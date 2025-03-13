@@ -3,3 +3,6 @@
 /.env
 api/.env
 api/vendor
+websocket/dist
+websocket/node_modules
+websocket/.env

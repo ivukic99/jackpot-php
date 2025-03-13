@@ -2,6 +2,7 @@
     require_once 'Database.php';
     require_once 'RequestValidator.php';
     require_once 'ResponseHelper.php';
+    require_once 'SocketClient.php';
 
     class Ticket {
         private $db;
@@ -39,7 +40,18 @@
                 $update_stmt = $this->db->prepare($update_query);
                 $update_stmt->execute(['fee' => $jackpot_fee]);
 
+                $select_jt_query = "SELECT total FROM jackpot WHERE id = 1";
+                $select_jt_stmt = $this->db->prepare($select_jt_query);
+                $select_jt_stmt->execute();
+                $jackpot = $select_jt_stmt->fetch(PDO::FETCH_ASSOC);
+
                 $this->db->commit();
+
+                $data = [
+                    "total" => $jackpot['total']
+                ];
+                $client = new SocketClient();
+                $client->sendData(json_encode($data));
 
                 ResponseHelper::jsonResponse([
                     'message' => 'Success.',
@@ -82,7 +94,18 @@
                 $update_stmt = $this->db->prepare($update_query);
                 $update_stmt->execute(['fee' => $ticket['jackpot_fee']]);
 
+                $select_jt_query = "SELECT total FROM jackpot WHERE id = 1";
+                $select_jt_stmt = $this->db->prepare($select_jt_query);
+                $select_jt_stmt->execute();
+                $jackpot = $select_jt_stmt->fetch(PDO::FETCH_ASSOC);
+
                 $this->db->commit();
+
+                $data = [
+                    "total" => $jackpot['total']
+                ];
+                $client = new SocketClient();
+                $client->sendData(json_encode($data));
 
                 ResponseHelper::jsonResponse([
                     'message' => 'Success.',
