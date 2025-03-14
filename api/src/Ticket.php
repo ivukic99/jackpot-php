@@ -3,6 +3,7 @@
     require_once 'RequestValidator.php';
     require_once 'ResponseHelper.php';
     require_once 'SocketClient.php';
+    require_once 'RabbitMQSender.php';
 
     class Ticket {
         private $db;
@@ -47,11 +48,13 @@
 
                 $this->db->commit();
 
-                $data = [
-                    "total" => $jackpot['total']
-                ];
-                $client = new SocketClient();
-                $client->sendData(json_encode($data));
+
+                    $data = [
+                        "total" => $jackpot['total']
+                    ];
+                    $client = new SocketClient();
+                    $client->sendData(json_encode($data));
+
 
                 ResponseHelper::jsonResponse([
                     'message' => 'Success.',

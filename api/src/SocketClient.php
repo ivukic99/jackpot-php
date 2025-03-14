@@ -1,5 +1,5 @@
 <?php
-require_once  'ResponseHelper.php';
+require_once 'RabbitMQSender.php';
 class SocketClient {
     private $host;
     private $port;
@@ -10,13 +10,14 @@ class SocketClient {
     }
 
     public function sendData($data) {
-        $socket = stream_socket_client("{$this->host}:{$this->port}",$errno, $errstr, 30);
+        $socket = @stream_socket_client("{$this->host}:{$this->port}",$errno, $errstr, 2);
 
         if (!$socket) {
-            ResponseHelper::jsonResponse(['error' => "Problem with socket connection."], 400);
+            $rabbitmq = new RabbitMQSender();
+            $rabbitmq->sender($data);
+        } else {
+            fwrite($socket, $data);
+            fclose($socket);
         }
-
-        fwrite($socket, $data);
-        fclose($socket);
     }
 }
