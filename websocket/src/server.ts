@@ -1,17 +1,16 @@
 import * as net from 'net';
 import {Server} from 'socket.io';
 import Redis from 'ioredis';
-import * as dotenv from 'dotenv';
+import { consumeFromQueue } from './rabbitmq'
+import { config } from './config';
 interface IData {
     total: number
 }
 
-dotenv.config();
-
-const WS_PORT: number = Number(process.env.WS_PORT) ?? 3000;
-const TCP_PORT: number = Number(process.env.TCP_PORT) ?? 4000;
-const REDIS_HOST: string = process.env.REDIS_HOST ?? 'localhost';
-const REDIS_PORT: number = Number(process.env.REDIS_PORT) ?? 6379;
+const WS_PORT: number = config.WS_PORT;
+const TCP_PORT: number = config.TCP_PORT;
+const REDIS_HOST: string = config.REDIS_HOST;
+const REDIS_PORT: number = config.REDIS_PORT;
 
 const redis = new Redis({
     host: REDIS_HOST,
@@ -42,8 +41,8 @@ const tcpServer = net.createServer((socket) => {
             const now: number = Date.now();
 
             if (now - lastUpdate >= 5000) {
-                    lastUpdate = now;
-                    await redis.set('jackpot_total', total.toString());
+                lastUpdate = now;
+                await redis.set('jackpot_total', total.toString());
 
                 io.emit("jackpot_update", total);
             }
@@ -59,3 +58,15 @@ const tcpServer = net.createServer((socket) => {
 tcpServer.listen(TCP_PORT, () => {
     console.log(`TCP server listening on port ${TCP_PORT}`);
 })
+
+const handleDataFromQueue = async (data: IData) => {
+    const now: number = Date.now();
+
+    if (now - lastUpdate >= 5000) {
+        lastUpdate = now;
+        await redis.set('jackpot_total', data.total.toString());
+
+        io.emit("jackpot_update", data.total);
+    }
+}
+consumeFromQueue(handleDataFromQueue);
