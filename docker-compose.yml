@@ -29,6 +29,7 @@ services:
       - "4000:4000"
     volumes:
       - ./websocket:/app
+      - ./websocket/logs:/app/logs
       - /app/node_modules
       - ./.env:/app/.env
     depends_on:

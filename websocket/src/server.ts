@@ -3,6 +3,8 @@ import {Server} from 'socket.io';
 import Redis from 'ioredis';
 import { consumeFromQueue } from './rabbitmq'
 import { config } from './config';
+import Logger from './logger';
+
 interface IData {
     total: number
 }
@@ -18,21 +20,21 @@ const redis = new Redis({
 })
 
 const io = new Server(WS_PORT, {
-    cors: { origin: "*" },
+    cors: { origin: '*' },
 });
 
 let lastUpdate: number = 0;
 
-console.log(`Websocket started on port ${WS_PORT}`);
+Logger.info(`Websocket started on port ${WS_PORT}`)
 
 io.on('connection', async (socket) => {
-    console.log(`Client connecting: ${socket.id}`);
+    Logger.info(`Client connecting: ${socket.id}`);
     const jackpot_total = await redis.get('jackpot_total') ?? 0;
-    socket.emit("jackpot_update", Number(jackpot_total));
+    socket.emit('jackpot_update', Number(jackpot_total));
 });
 
 const tcpServer = net.createServer((socket) => {
-    console.log("API connection with TCP");
+    Logger.info("API connection with TCP");
 
     socket.on('data', async (data: Buffer) => {
         try {
@@ -44,19 +46,19 @@ const tcpServer = net.createServer((socket) => {
                 lastUpdate = now;
                 await redis.set('jackpot_total', total.toString());
 
-                io.emit("jackpot_update", total);
+                io.emit('jackpot_update', total);
             }
         } catch (error) {
-            console.log('Invalid JSON format.')
+            Logger.error('Invalid JSON format.');
         }
 
     });
 
-    socket.on("end", () => console.log("API stop connection!"));
+    socket.on("end", () => Logger.info('API stop connection!'));
 });
 
 tcpServer.listen(TCP_PORT, () => {
-    console.log(`TCP server listening on port ${TCP_PORT}`);
+    Logger.info(`TCP server listening on port ${TCP_PORT}`)
 })
 
 const handleDataFromQueue = async (data: IData) => {

@@ -1,16 +1,17 @@
 import * as amqp from 'amqplib';
 import { config } from './config';
+import Logger from './logger';
 
 const RABBITMQ_URL: string = config.RABBITMQ_URL;
 const QUEUE_NAME: string = 'jackpot_queue';
 
 const connectWithRetry = async (callback: (message: any) => void) => {
-    const maxRetries = 3;
+    const maxRetries = 5;
     let attempt = 0;
 
     while (attempt < maxRetries) {
         try {
-            console.log(`Attempt ${attempt + 1} to connect to RabbitMQ...`);
+            Logger.info(`Attempt ${attempt + 1} to connect to RabbitMQ...`);
             const connection = await amqp.connect(RABBITMQ_URL);
             const channel = await connection.createChannel();
             await channel.assertQueue(QUEUE_NAME, {
@@ -27,16 +28,16 @@ const connectWithRetry = async (callback: (message: any) => void) => {
                 }
             }, {exclusive: true});
 
-            console.log(`Connected and listening on queue: ${QUEUE_NAME}`);
+            Logger.info(`Connected and listening on queue: ${QUEUE_NAME}`);
             return;
         } catch (error) {
-            console.error(`Connection attempt ${attempt + 1} failed. Retrying...`);
+            Logger.error(`Connection attempt ${attempt + 1} failed. Retrying...`)
             attempt++;
             await new Promise((resolve) => setTimeout(resolve, 2000));
         }
     }
 
-    console.error('Failed to connect to RabbitMQ.');
+    Logger.error('Failed to connect to RabbitMQ.');
 };
 
 export const consumeFromQueue = (callback: (message: any) => void) => {

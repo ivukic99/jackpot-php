@@ -8,3 +8,5 @@ api/logs/*
 websocket/dist
 websocket/node_modules
 websocket/.env
+websocket/logs/*
+!websocket/logs/.gitkeep
