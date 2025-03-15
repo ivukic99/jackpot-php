@@ -10,7 +10,7 @@ services:
     volumes:
       - ./api:/var/www/html
       - ./.env:/var/www/html/.env
-      - ./php.ini:/usr/local/etc/php/php.ini
+      - ./api/php.ini:/usr/local/etc/php/php.ini
       - ./api/logs:/var/www/html/logs
       - /var/www/html/vendor
     depends_on:
