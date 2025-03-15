@@ -9,7 +9,8 @@ class SocketClient {
         $this->port = $port;
     }
 
-    public function sendData($data) {
+    public function sendData($data): void
+    {
         $socket = @stream_socket_client("{$this->host}:{$this->port}",$errno, $errstr, 2);
 
         if (!$socket) {

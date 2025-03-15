@@ -4,13 +4,15 @@
     require_once 'ResponseHelper.php';
     require_once 'SocketClient.php';
     require_once 'RabbitMQSender.php';
+    require_once 'ErrorLogger.php';
 
     class Ticket {
         private $db;
         public function __construct() {
             $this->db = Database::connect();
         }
-        public function create() {
+        public function create(): void
+        {
             try {
                 $this->db->beginTransaction();
 
@@ -64,11 +66,13 @@
                 ], 201);
             } catch (Exception $e) {
                 $this->db->rollBack();
+                ErrorLogger::error($e->getMessage(), __FILE__, __LINE__);
                 ResponseHelper::jsonResponse(['error' => $e->getMessage()], 400);
             }
         }
 
-        public function delete() {
+        public function delete(): void
+        {
             try {
                 $this->db->beginTransaction();
                 $request = json_decode(file_get_contents("php://input"), true);
@@ -115,13 +119,14 @@
                 ]);
             } catch (Exception $e) {
                 $this->db->rollBack();
+                ErrorLogger::error($e->getMessage(), __FILE__, __LINE__);
                 ResponseHelper::jsonResponse(['error' => $e->getMessage()], 400);
             }
         }
 
-        private function calculate_jackpot_fee(float $amount) {
-            $value = $amount * 0.03;
-            return $value;
+        private function calculate_jackpot_fee(float $amount): float
+        {
+            return $amount * 0.03;
         }
     }
 

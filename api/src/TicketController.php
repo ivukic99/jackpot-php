@@ -7,7 +7,7 @@ header('Content-Type: application/json');
 
 class TicketsController
 {
-    public static function handleRequest()
+    public static function handleRequest(): void
     {
         $uri = $_SERVER['REQUEST_URI'];
         $method = $_SERVER['REQUEST_METHOD'];
@@ -16,7 +16,6 @@ class TicketsController
             $ticket = new Ticket();
             $ticket->create();
         } elseif ($uri === '/api/ticket' && $method === 'DELETE') {
-            // elseif (preg_match('/^\/api\/ticket\/:([0-9]+)$/', $uri, $matches) && $method === 'DELETE')
             $ticket = new Ticket();
             $ticket->delete();
         } else {

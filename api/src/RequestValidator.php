@@ -7,7 +7,8 @@ class RequestValidator {
         $this->db = $db;
     }
 
-    public function validate(array $request, array $rules) {
+    public function validate(array $request, array $rules): bool
+    {
         foreach ($rules as $rule_key => $rules_array) {
             foreach ($rules_array as $rule) {
                 if ($rule === 'required' && !isset($request[$rule_key])) {
@@ -34,15 +35,18 @@ class RequestValidator {
         return empty($this->errors);
     }
 
-    private function addError(string $key, string $message) {
+    private function addError(string $key, string $message): void
+    {
         $this->errors[$key] = $message;
     }
 
-    public function getErrors() {
+    public function getErrors(): array
+    {
         return $this->errors;
     }
 
-    private function recordExists(string $table, string $column, mixed $value) {
+    private function recordExists(string $table, string $column, mixed $value): bool
+    {
         $query = "SELECT COUNT(*) FROM $table WHERE `$column` = :value";
         $stmt = $this->db->prepare($query);
         $stmt->execute(['value' => $value]);

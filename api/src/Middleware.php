@@ -2,7 +2,8 @@
 require_once 'ResponseHelper.php';
 
 class Middleware {
-    public static function apiKeyAuthenticate() {
+    public static function apiKeyAuthenticate(): void
+    {
         $config = include __DIR__ . '/../config/config.php';
         $apiKey = $config['API_KEY'];
         $headers = getallheaders();
@@ -12,7 +13,8 @@ class Middleware {
         }
     }
 
-    public static function ensureJsonRequest() {
+    public static function ensureJsonRequest(): void
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
             $content_type = $_SERVER['CONTENT_TYPE'];
             if ($content_type !== 'application/json') {
