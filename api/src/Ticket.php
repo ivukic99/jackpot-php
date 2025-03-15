@@ -1,132 +1,154 @@
 <?php
-    require_once 'Database.php';
-    require_once 'RequestValidator.php';
-    require_once 'ResponseHelper.php';
-    require_once 'SocketClient.php';
-    require_once 'RabbitMQSender.php';
-    require_once 'ErrorLogger.php';
+require_once 'Database.php';
+require_once 'RequestValidator.php';
+require_once 'ResponseHelper.php';
+require_once 'SocketClient.php';
+require_once 'RabbitMQSender.php';
+require_once 'ErrorLogger.php';
 
-    class Ticket {
-        private $db;
-        public function __construct() {
-            $this->db = Database::connect();
-        }
-        public function create(): void
-        {
-            try {
-                $this->db->beginTransaction();
+class Ticket
+{
+    private $db;
 
-                $request = json_decode(file_get_contents("php://input"), true);
+    public function __construct()
+    {
+        $this->db = Database::connect();
+    }
 
-                $rules = [
-                    'amount' => ['required', 'number', 'positive'],
-                ];
+    public function create(): void
+    {
+        try {
+            $request = json_decode(file_get_contents("php://input"), true);
 
-                $validator = new RequestValidator($this->db);
-                if (!$validator->validate($request, $rules)) {
-                    ResponseHelper::jsonResponse(['error' => $validator->getErrors()], 400);
-                }
+            $rules = [
+                'amount' => ['required', 'number', 'positive'],
+            ];
 
-                $amount = $request['amount'];
-                $jackpot_fee = $this->calculate_jackpot_fee($amount);
-
-                $insert_query = "INSERT INTO tickets (amount, jackpot_fee) VALUES (:amount, :jackpot_fee)";
-                $insert_stmt = $this->db->prepare($insert_query);
-                $insert_stmt->execute([
-                    'amount' => $amount,
-                    'jackpot_fee' => $jackpot_fee
-                ]);
-
-                $ticket_id = $this->db->lastInsertId();
-
-                $update_query = "UPDATE jackpot SET total = total + :fee WHERE id = 1";
-                $update_stmt = $this->db->prepare($update_query);
-                $update_stmt->execute(['fee' => $jackpot_fee]);
-
-                $select_jt_query = "SELECT total FROM jackpot WHERE id = 1";
-                $select_jt_stmt = $this->db->prepare($select_jt_query);
-                $select_jt_stmt->execute();
-                $jackpot = $select_jt_stmt->fetch(PDO::FETCH_ASSOC);
-
-                $this->db->commit();
-
-
-                    $data = [
-                        "total" => $jackpot['total']
-                    ];
-                    $client = new SocketClient();
-                    $client->sendData(json_encode($data));
-
-
-                ResponseHelper::jsonResponse([
-                    'message' => 'Success.',
-                    'data' => [
-                        'ticket_id' => $ticket_id
-                    ]
-                ], 201);
-            } catch (Exception $e) {
-                $this->db->rollBack();
-                ErrorLogger::error($e->getMessage(), __FILE__, __LINE__);
-                ResponseHelper::jsonResponse(['error' => $e->getMessage()], 400);
+            $validator = new RequestValidator($this->db);
+            if (!$validator->validate($request, $rules)) {
+                ResponseHelper::jsonResponse(['error' => $validator->getErrors()], 400);
             }
-        }
 
-        public function delete(): void
-        {
-            try {
-                $this->db->beginTransaction();
-                $request = json_decode(file_get_contents("php://input"), true);
+            $amount = $request['amount'];
+            $jackpot_fee = $this->calculate_jackpot_fee($amount);
 
-                $rules = [
-                    'ticket_id' => ['required', 'int', 'positive', 'exists:tickets,id'],
-                ];
+            $this->db->beginTransaction();
 
-                $validator = new RequestValidator($this->db);
-                if (!$validator->validate($request, $rules)) {
-                    ResponseHelper::jsonResponse(['error' => $validator->getErrors()], 400);
-                }
+            $ticket_id = $this->insertTicket($amount, $jackpot_fee);
 
-                $ticket_id = $request['ticket_id'];
+            $this->updateJackpot($jackpot_fee);
 
-                $select_query = "SELECT * FROM tickets WHERE id = :ticket_id";
-                $select_stmt = $this->db->prepare($select_query);
-                $select_stmt->execute(['ticket_id' => $ticket_id]);
-                $ticket = $select_stmt->fetch(PDO::FETCH_ASSOC);
+            $jackpot = $this->getJackpotTotal();
 
-                $delete_query = "DELETE FROM tickets WHERE id = :id";
-                $delete_stmt = $this->db->prepare($delete_query);
-                $delete_stmt->execute(['id' => $ticket_id]);
+            $this->db->commit();
 
-                $update_query = "UPDATE jackpot SET total = total - :fee WHERE id = 1";
-                $update_stmt = $this->db->prepare($update_query);
-                $update_stmt->execute(['fee' => $ticket['jackpot_fee']]);
+            $data = [
+                "total" => $jackpot['total']
+            ];
+            $client = new SocketClient();
+            $client->sendData(json_encode($data));
 
-                $select_jt_query = "SELECT total FROM jackpot WHERE id = 1";
-                $select_jt_stmt = $this->db->prepare($select_jt_query);
-                $select_jt_stmt->execute();
-                $jackpot = $select_jt_stmt->fetch(PDO::FETCH_ASSOC);
-
-                $this->db->commit();
-
-                $data = [
-                    "total" => $jackpot['total']
-                ];
-                $client = new SocketClient();
-                $client->sendData(json_encode($data));
-
-                ResponseHelper::jsonResponse([
-                    'message' => 'Success.',
-                ]);
-            } catch (Exception $e) {
-                $this->db->rollBack();
-                ErrorLogger::error($e->getMessage(), __FILE__, __LINE__);
-                ResponseHelper::jsonResponse(['error' => $e->getMessage()], 400);
-            }
-        }
-
-        private function calculate_jackpot_fee(float $amount): float
-        {
-            return $amount * 0.03;
+            ResponseHelper::jsonResponse([
+                'message' => 'Success.',
+                'data' => [
+                    'ticket_id' => $ticket_id
+                ]
+            ], 201);
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            ErrorLogger::error($e->getMessage(), __FILE__, __LINE__);
+            ResponseHelper::jsonResponse(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function delete(): void
+    {
+        try {
+            $request = json_decode(file_get_contents("php://input"), true);
+
+            $rules = [
+                'ticket_id' => ['required', 'int', 'positive', 'exists:tickets,id'],
+            ];
+
+            $validator = new RequestValidator($this->db);
+            if (!$validator->validate($request, $rules)) {
+                ResponseHelper::jsonResponse(['error' => $validator->getErrors()], 400);
+            }
+
+            $ticket_id = $request['ticket_id'];
+
+            $ticket = $this->getTicketById($ticket_id);
+
+            $this->db->beginTransaction();
+
+            $this->deleteTicketById($ticket_id);
+
+            $this->updateJackpot(-$ticket['jackpot_fee']);
+
+            $jackpot = $this->getJackpotTotal();
+
+            $this->db->commit();
+
+            $data = [
+                "total" => $jackpot['total']
+            ];
+            $client = new SocketClient();
+            $client->sendData(json_encode($data));
+
+            ResponseHelper::jsonResponse([
+                'message' => 'Success.',
+            ]);
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            ErrorLogger::error($e->getMessage(), __FILE__, __LINE__);
+            ResponseHelper::jsonResponse(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    private function insertTicket($amount, $jackpot_fee): string
+    {
+        $query = "INSERT INTO tickets (amount, jackpot_fee) VALUES (:amount, :jackpot_fee)";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([
+            'amount' => $amount,
+            'jackpot_fee' => $jackpot_fee
+        ]);
+        return $this->db->lastInsertId();
+    }
+
+    private function updateJackpot($jackpot_fee): void
+    {
+        $query = "UPDATE jackpot SET total = total + :fee WHERE id = 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute(['fee' => $jackpot_fee]);
+    }
+
+    private function getJackpotTotal()
+    {
+        $query = "SELECT total FROM jackpot WHERE id = 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function getTicketById($ticket_id)
+    {
+        $query = "SELECT * FROM tickets WHERE id = :ticket_id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute(['ticket_id' => $ticket_id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function deleteTicketById($ticket_id): void
+    {
+        $query = "DELETE FROM tickets WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute(['id' => $ticket_id]);
+    }
+
+    private function calculate_jackpot_fee(float $amount): float
+    {
+        return $amount * 0.03;
+    }
+}
 

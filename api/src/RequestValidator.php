@@ -17,7 +17,7 @@ class RequestValidator {
                 if ($rule === 'number' && isset($request[$rule_key]) && is_string($request[$rule_key])) {
                     $this->addError($rule_key, "The $rule_key must be a number.");
                 }
-                if ($rule === 'positive' && isset($request[$rule_key]) && $request[$rule_key] < 0) {
+                if ($rule === 'positive' && isset($request[$rule_key]) && $request[$rule_key] <= 0) {
                     $this->addError($rule_key, "The $rule_key must be greater than 0.");
                 }
                 if ($rule === 'int' && isset($request[$rule_key]) && !is_int($request[$rule_key])) {
