@@ -1,15 +1,20 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
-$envPath = dirname(__DIR__, 1) . '/.env';
-if (!file_exists($envPath)) {
+$envPathLocal = dirname(__DIR__, 2) . '/.env';
+$envPathDocker = dirname(__DIR__, 1) . '/.env';
+
+if (file_exists($envPathLocal)) {
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 2));
+    $dotenv->load();
+} elseif (file_exists($envPathDocker)) {
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 1));
+    $dotenv->load();
+} else {
     http_response_code(403);
     echo json_encode(["error" => ".env file not found."]);
     exit;
 }
-
-$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 1));
-$dotenv->load();
 
 return [
     'DB_HOST' => $_ENV['DB_HOST'],
