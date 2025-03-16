@@ -13,6 +13,8 @@ The Jackpot Tracking System is a containerized solution for handling ticket tran
 - MySQL
 - Docker & Docker Compose
 - Apache (for PHP API)
+- Redis
+- RabbitMQ
 
 ---
 
