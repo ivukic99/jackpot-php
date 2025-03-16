@@ -1,6 +1,6 @@
 <?php
 
-require 'vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
@@ -26,7 +26,7 @@ function sendRequest($method, $url, $data = [])
             'status' => $response->getStatusCode(),
             'response' => json_decode($response->getBody(), true),
         ];
-    } catch (RequestException $e) {
+    } catch (Exception $e) {
         return [
             'status' => $e->getCode(),
             'response' => $e->getMessage(),
