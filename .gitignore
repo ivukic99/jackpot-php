@@ -1,2 +1,12 @@
 .idea/
 *.iml
+#/.env
+#api/.env
+api/vendor
+api/logs/*
+!api/logs/.gitkeep
+websocket/dist
+websocket/node_modules
+#websocket/.env
+websocket/logs/*
+!websocket/logs/.gitkeep
