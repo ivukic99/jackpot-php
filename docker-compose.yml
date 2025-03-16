@@ -14,9 +14,12 @@ services:
       - ./api/logs:/var/www/html/logs
       - /var/www/html/vendor
     depends_on:
-      - mysql
-      - redis
-      - rabbitmq
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     networks:
       - app-network
 
@@ -74,6 +77,11 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     ports:
       - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 30s
+      interval: 5s
+      retries: 10
     volumes:
       - mysql_data:/var/lib/mysql
       - ./api/mysql-init/:/docker-entrypoint-initdb.d
@@ -92,7 +100,8 @@ services:
     ports:
       - "8000:80"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - app-network
 

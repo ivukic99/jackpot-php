@@ -11,7 +11,7 @@ class Database {
                 self::$pdo = new PDO("mysql:host={$config['DB_HOST']};dbname={$config['DB_NAME']}", $config['DB_USER'], $config['DB_PASSWORD']);
                 self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             } catch (PDOException $e) {
-                ErrorLogger::error("Connection failed: " . $e->getMessage(), __FILE__, __LINE__);
+                ErrorLogger::error("Connection failed: " . $e->getMessage(), $e->getFile(), $e->getLine());
                 ResponseHelper::jsonResponse(["message" => "Connection failed: " . $e->getMessage()], 500);
             }
         }
